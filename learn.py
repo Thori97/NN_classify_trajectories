@@ -1,5 +1,8 @@
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('tkagg')
 args = sys.argv
 
 import torch
@@ -48,7 +51,7 @@ dataset_train = TensorDataset(t_X_train, t_Y_train)
 dataset_test = TensorDataset(t_X_test, t_Y_test)
 
 loader_train = DataLoader(dataset_train, batch_size=BATCH_SIZE, shuffle=True)
-loader_valid = DataLoader(dataset_test, batch_size=len(dataset_test))
+loader_valid = DataLoader(dataset_test, batch_size=1)
 
 
 import my_model
@@ -66,6 +69,7 @@ model = model.to(device)
 optimizer = optim.Adam(           # 最適化アルゴリム
 model.parameters(),          # 最適化で更新対象のパラメーター（重みやバイアス）
     #lr=0.03,            # 更新時の学習率
+    weight_decay = 2e-4#L2正則化5e-4よさげ
     ) # L2正則化（※不要な場合は0か省略）
 
 
@@ -92,9 +96,11 @@ def test(model, device, test_loader):
     test_loss = 0
     correct = 0
     all_n = 0
+    outputs = []
+    likelihoods = []
     with torch.no_grad():
         for data, target in test_loader:
-            all_n = len(data)
+            raw_data = data[0]
             data, target = data.to(device), target.to(device)
             output = model(data)
             #print(output)
@@ -103,12 +109,24 @@ def test(model, device, test_loader):
             #correct += pred.eq(target.view_as(pred)).sum().item()
             #print(target)
             for i in range(len(output)):
+                all_n += 1
                 #print(target[i], output[i])
+                outputs.append(output.item())
+                likelihood = generate_path.which_f(generate_path.f1, generate_path.f2, raw_data).item()
+                likelihoods.append(likelihood)
+                #print("output =", round(output.item(), 4)," lilelihood =" ,round(generate_path.which_f(generate_path.f1, generate_path.f2, raw_data).item(), 4))
                 if output[i] <0.5 and target[i] == 0:
                     correct +=1 
                 elif output[i] >0.5 and target[i] == 1:
                     correct +=1
     print("correct rate =",correct/all_n)
+    if True:
+        plt.scatter(likelihoods, outputs)
+        plt.grid()
+        plt.xlabel("likelihood")
+        plt.ylabel("output")
+        plt.savefig("likelihoodoutput.png")
+        plt.show()
     
 
 

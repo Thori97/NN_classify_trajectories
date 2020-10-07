@@ -7,10 +7,12 @@ D = 1#intense of noise
 K = 1#intense of potential
 dt = 10**-3#time step 
 dx = 1e-2#微分する用のdx
-steps = int(10**3)#ステップ数
+steps = int(10**2)#ステップ数10**3だった
 beta = 2#逆温度
 tau = steps * dt#time duration of a path
 
+f1 = lambda x, t:0.5*x
+f2 = lambda x, t:5*x**3
 
 #fにはx,tの2引数を持つ関数を渡す
 def simulate_Langevin(f, back=True, x0=0):
@@ -67,8 +69,8 @@ def which_f(f1, f2, trajectory):
     return np.exp(logL1)/(np.exp(logL1)+np.exp(logL2))
 
 if __name__ == '__main__':
-    f1 = lambda x, t:2*x
-    f2 = lambda x, t:3*x**3
+    f1 = lambda x, t:x
+    f2 = lambda x, t:x**3
     args = sys.argv
     n_train = int(args[1])
     n_test  = int(args[2])
@@ -78,10 +80,10 @@ if __name__ == '__main__':
     #実際にはその4倍返ってくる
     #順f1, 逆f1, 順f2, 逆f2
     
-    traindata_X1, traindata_Y1 = generate_datasets(f1, n_train, 0, back = back)
-    traindata_X2, traindata_Y2 = generate_datasets(f2, n_train, 1, back = back)
-    testdata_X1, testdata_Y1 = generate_datasets(f1, n_test, 0, back = back)
-    testdata_X2, testdata_Y2 = generate_datasets(f2, n_test, 1, back = back)
+    traindata_X1, traindata_Y1 = generate_datasets(f1, n_train, 1, back = back)
+    traindata_X2, traindata_Y2 = generate_datasets(f2, n_train, 0, back = back)
+    testdata_X1, testdata_Y1 = generate_datasets(f1, n_test, 1, back = back)
+    testdata_X2, testdata_Y2 = generate_datasets(f2, n_test, 0, back = back)
     
     
     
@@ -95,9 +97,9 @@ if __name__ == '__main__':
     for i in range(len(testdata_X)):
         f1likelihood = which_f(f1, f2, testdata_X[i])
         label = testdata_Y[i]
-        if f1likelihood > 0.5 and label == 0:
+        if f1likelihood > 0.5 and label == 1:
             correct += 1
-        elif f1likelihood <0.5 and label == 1:
+        elif f1likelihood <0.5 and label == 0:
             correct += 1
     print("theoretical correct rate =", correct/len(testdata_X))
 
